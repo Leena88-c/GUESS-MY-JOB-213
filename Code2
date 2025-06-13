@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Guess My Job</title>
+  <style>
+    :root {
+      --main-bg-light: #f0f8ff;
+      --main-bg-dark: #1e1e1e;
+      --text-light: #000;
+      --text-dark: #fff;
+      --primary: #4CAF50;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--main-bg-light);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background-color: var(--main-bg-dark);
+      color: var(--text-dark);
+    }
+    .floating-box {
+      background: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .floating-box.dark-mode {
+      background: rgba(30, 30, 30, 0.8);
+    }
+    .title {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    .subtitle {
+      font-size: 1rem;
+      margin-top: 10px;
+    }
+    .start-button {
+      margin-top: 30px;
+      padding: 10px 20px;
+      font-size: 1.2rem;
+      border: none;
+      background-color: var(--primary);
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .mode-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+    }
+    .hidden { display: none; }
+    .image-display img {
+      max-width: 300px;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+    .audio-control {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+    }
+    .rating-stars span {
+      font-size: 2rem;
+      cursor: pointer;
+    }
+    .result-text {
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <button class="mode-toggle" onclick="toggleMode()">☀/☾</button>
+
+  <div class="floating-box" id="start-screen">
+    <div class="title">Guess My Job</div>
+    <div class="subtitle">هل تستطيع تخمين مهنتي من خلال صورة لي؟</div>
+    <button class="start-button" onclick="startGame()">ابدأ اللعبة</button>
+  </div>
+
+  <div id="lets-go" class="hidden">
+    <h1>Let's Go!</h1>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <div class="floating-box">
+      <div class="title">Can you guess my job?</div>
+      <div class="image-display" id="image-container">
+        <img id="main-image" src="" alt="person" />
+      </div>
+      <button onclick="showResult()">النتيجة</button>
+      <div id="result-area" class="hidden">
+        <img id="job-image" src="" alt="job" />
+        <div class="result-text" id="job-title">اسم الوظيفة هنا</div>
+        <button onclick="nextImage()">التالي</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="end-screen" class="hidden">
+    <div class="floating-box">
+      <div class="title">🎉 كيف كان أداؤك؟ 🎉</div>
+      <div class="subtitle">قيّم تجربتك في اللعبة</div>
+      <div class="rating-stars">
+        <span onclick="rate(1)">⭐</span>
+        <span onclick="rate(2)">⭐</span>
+        <span onclick="rate(3)">⭐</span>
+        <span onclick="rate(4)">⭐</span>
+        <span onclick="rate(5)">⭐</span>
+      </div>
+    </div>
+    <div style="margin-top: 20px; text-align: center;">
+      <strong>Join us:</strong>
+      <a href="https://discord.gg/hHG9WtZk" target="_blank">رابط الديسكورد</a>
+    </div>
+  </div>
+
+  <audio id="bg-music" loop>
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3">
+  </audio>
+  <div class="audio-control">
+    <button onclick="toggleAudio()">🔊/🔇</button>
+  </div>
+
+<script>
+  let currentIndex = 0;
+  const images = [
+    {
+      img: 'https://i.ibb.co/4g0N3Mq9/RJWQDBMWGPPKJJE.jpg',
+      jobImg: 'https://i.ibb.co/zWCKkR7z/WOEBMANWWUKJNNP.jpg',
+      title: 'طباخة'
+    },
+    {
+      img: 'https://i.ibb.co/4wHRsCVL/GFHBUUONAAJGCHJ.jpg',
+      jobImg: 'https://i.ibb.co/QvTNPjsH/MGOQJCLGWKFRMWB.jpg',
+      title: 'سائق طاكسي'
+    },
+    {
+      img: 'https://i.ibb.co/jWhmbG1/UZOSZQXYTPYHKCK.jpg',
+      jobImg: 'https://i.ibb.co/YTgXKRD/DDBVVODIHCRNSKV.jpg',
+      title: 'مزارع'
+    },
+    {
+      img: 'https://i.ibb.co/YQ6R8qz/WPFSZFWXGSBTDCX.jpg',
+      jobImg: 'https://i.ibb.co/WGB2h60/HRHLILXAWNPKOOV.jpg',
+      title: 'نجار'
+    },
+    {
+      img: 'https://i.ibb.co/h9nNzmp/MYQOKRZWXQTYKJK.jpg',
+      jobImg: 'https://i.ibb.co/KW3yG7K/HEEXSHZUGLGRPVE.jpg',
+      title: 'شرطية'
+    },
+    {
+      img: 'https://i.ibb.co/yN8pRvw/SFYCRIBZKVOQXUJ.jpg',
+      jobImg: 'https://i.ibb.co/GJCQpVz/OESUMXPSRKMMRDK.jpg',
+      title: 'كوافورة'
+    },
+    {
+      img: 'https://i.ibb.co/gMZQvsc/VNEDAWZVWLKUVNB.jpg',
+      jobImg: 'https://i.ibb.co/kx0Q8Qk/FPBLTLMTOCSHCGR.jpg',
+      title: 'طبيب'
+    },
+    {
+      img: 'https://i.ibb.co/GMKGMy3/CTPRXEKVZJLWWQB.jpg',
+      jobImg: 'https://i.ibb.co/4ZWJ4CR/KUEBXYYCKNKQPHR.jpg',
+      title: 'مصممة أزياء'
+    }
+  ];
+
+  const bgMusic = document.getElementById('bg-music');
+
+  function startGame() {
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('lets-go').classList.remove('hidden');
+    bgMusic.play();
+    setTimeout(() => {
+      document.getElementById('lets-go').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+      document.getElementById('main-image').src = images[currentIndex].img;
+    }, 2000);
+  }
+
+  function toggleMode() {
+    document.body.classList.toggle('dark-mode');
+    document.querySelectorAll('.floating-box').forEach(box => box.classList.toggle('dark-mode'));
+  }
+
+  function toggleAudio() {
+    if (bgMusic.paused) {
+      bgMusic.play();
+    } else {
+      bgMusic.pause();
+    }
+  }
+
+  function showResult() {
+    document.getElementById('result-area').classList.remove('hidden');
+    document.getElementById('job-image').src = images[currentIndex].jobImg;
+    document.getElementById('job-title').innerText = images[currentIndex].title;
+  }
+
+  function nextImage() {
+    currentIndex++;
+    if (currentIndex >= images.length) {
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('end-screen').classList.remove('hidden');
+    } else {
+      document.getElementById('main-image').src = images[currentIndex].img;
+      document.getElementById('result-area').classList.add('hidden');
+    }
+  }
+
+  function rate(stars) {
+    alert(`شكرا لتقييمك بـ ${stars} نجوم!`);
+  }
+</script>
+</body>
+</html>
